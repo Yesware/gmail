@@ -15,7 +15,7 @@ module GmailImapExtensions
             break
           when T_SPACE
             shift_token
-            token = lookahead
+            next
           end
           case token.value
           when /\A(?:ENVELOPE)\z/ni
