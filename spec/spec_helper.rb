@@ -26,4 +26,9 @@ def mock_mailbox(box="INBOX", &block)
 end
 
 # Run test by creating your own test account with credentials in account.yml
-TEST_ACCOUNT = YAML.load_file(File.join(File.dirname(__FILE__), 'account.yml'))
+TEST_ACCOUNT =
+  begin
+    YAML.load_file(File.join(File.dirname(__FILE__), 'account.yml'))
+  rescue Exception => ex
+    puts "Couldn't create a test account: #{ex.message}"
+  end
