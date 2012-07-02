@@ -81,13 +81,14 @@ module Net
       end
 
       LABELS_REGEXP = /\G(?:\
-(?# 1:  SPACE    )( )|\
-(?# 2:  GM_LABEL )"\\([^\x80-\xff(){ \x00-\x1f\x7f%"\\]+)"|\
-(?# 3:  FLAG     )\\([^\x80-\xff(){ \x00-\x1f\x7f%"\\]+)|\
-(?# 4:  QUOTED   )"((?:[^\x00\r\n"\\]|\\["\\])*)"|\
-(?# 5:  ATOM     )([^\x80-\xff(){ \x00-\x1f\x7f%*"\\]+)|\
-(?# 6:  LPAR     )(\()|\
-(?# 7:  RPAR     )(\)))/ni
+(?# 1:  SPACE     )( )|\
+(?# 2:  GM_LABEL  )"\\([^\x80-\xff(){ \x00-\x1f\x7f%"\\]+)"|\
+(?# 3:  GM_LABEL2 )"\\\\([^\x80-\xff(){ \x00-\x1f\x7f%"\\]+)"|\
+(?# 4:  FLAG      )\\([^\x80-\xff(){ \x00-\x1f\x7f%"\\]+)|\
+(?# 5:  QUOTED    )"((?:[^\x00\r\n"\\]|\\["\\])*)"|\
+(?# 6:  ATOM      )([^\x80-\xff(){ \x00-\x1f\x7f%*"\\]+)|\
+(?# 7:  LPAR      )(\()|\
+(?# 8:  RPAR      )(\)))/ni
 
       alias_method :orig_next_token, :next_token
       def next_token
@@ -97,19 +98,16 @@ module Net
             @pos = $~.end(0)
             if $1
               return Token.new(T_SPACE, $+)
-            elsif $2
+            elsif $2 || $3 || $4
               symbol = $+.capitalize.untaint.intern
               return Token.new(T_GM_LABEL, symbol)
-            elsif $3
-              symbol = $+.capitalize.untaint.intern
-              return Token.new(T_GM_LABEL, symbol)
-            elsif $4
-              return Token.new(T_QUOTED, $+.gsub(/\\(["\\])/n, "\\1"))
             elsif $5
-              return Token.new(T_ATOM, $+)
+              return Token.new(T_QUOTED, $+.gsub(/\\(["\\])/n, "\\1"))
             elsif $6
-              return Token.new(T_LPAR, $+)
+              return Token.new(T_ATOM, $+)
             elsif $7
+              return Token.new(T_LPAR, $+)
+            elsif $8
               return Token.new(T_RPAR, $+)
             else
               parse_error("[Net::IMAP BUG] LABEL_REGEXP is invalid")

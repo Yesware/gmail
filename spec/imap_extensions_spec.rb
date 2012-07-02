@@ -36,4 +36,25 @@ EOF
     response.data.attr["X-GM-LABELS"].should == [:Important, "KountryKash (old)"]
   end
 
+  it "should handle no labels" do
+    parser = Net::IMAP::ResponseParser.new
+    response = parser.parse(<<EOF.gsub(/\n/, "\r\n").taint)
+* 2446 FETCH (X-GM-THRID 1402858025049529478 X-GM-MSGID 1402858025049529478 X-GM-LABELS () UID 790801 BODYSTRUCTURE ("TEXT" "PLAIN" ("CHARSET" "utf-8") NIL NIL "8BIT" 962 38 NIL NIL NIL))
+EOF
+    response.data.attr["X-GM-LABELS"].should == []
+  end
+
+  it "should handle unquoted strings with non-alphanumeric characters" do
+    parser = Net::IMAP::ResponseParser.new
+    response = parser.parse(<<EOF.gsub(/\n/, "\r\n").taint)
+* 2446 FETCH (X-GM-THRID 1402858025049529478 X-GM-MSGID 1402858025049529478 X-GM-LABELS (info@capital-group.it "\\Inbox") UID 790801 BODYSTRUCTURE ("TEXT" "PLAIN" ("CHARSET" "utf-8") NIL NIL "8BIT" 962 38 NIL NIL NIL))
+EOF
+    response.data.attr["X-GM-LABELS"].should == ["info@capital-group.it", :Inbox]
+
+    response = parser.parse(<<EOF.gsub(/\n/, "\r\n").taint)
+* 2446 FETCH (X-GM-THRID 1402858025049529478 X-GM-MSGID 1402858025049529478 X-GM-LABELS (Business/Marketing/Newsletter/Emailers/Advert) UID 790801 BODYSTRUCTURE ("TEXT" "PLAIN" ("CHARSET" "utf-8") NIL NIL "8BIT" 962 38 NIL NIL NIL))
+EOF
+    response.data.attr["X-GM-LABELS"].should == ["Business/Marketing/Newsletter/Emailers/Advert"]
+  end
+
 end
