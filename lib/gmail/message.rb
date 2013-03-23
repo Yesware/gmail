@@ -23,12 +23,12 @@ module Gmail
     
     # Mark message with given flag.
     def flag(name)
-      !!@gmail.mailbox(@mailbox.name) { @gmail.conn.uid_store(uid, "+FLAGS", [name]) }
+      !!@gmail.mailbox(@mailbox.name, @mailbox.read_only) { @gmail.conn.uid_store(uid, "+FLAGS", [name]) }
     end
     
     # Unmark message. 
     def unflag(name)
-      !!@gmail.mailbox(@mailbox.name) { @gmail.conn.uid_store(uid, "-FLAGS", [name]) }
+      !!@gmail.mailbox(@mailbox.name, @mailbox.read_only) { @gmail.conn.uid_store(uid, "-FLAGS", [name]) }
     end
     
     # Do commonly used operations on message. 
@@ -91,7 +91,7 @@ module Gmail
     alias :move :move_to
     
     # Move message to given and delete from others. When given mailbox doesn't 
-    # exist then it will be automaticaly created. 
+    # exist then it will be automatically created.
     def move_to!(name, from=nil)
       label!(name, from) && delete!
     end
@@ -102,7 +102,9 @@ module Gmail
     #
     # See also <tt>Gmail::Message#label!</tt>.
     def label(name, from=nil)
-      @gmail.mailbox(Net::IMAP.encode_utf7(from || @mailbox.external_name)) { @gmail.conn.uid_copy(uid, Net::IMAP.encode_utf7(name)) }
+      @gmail.mailbox(Net::IMAP.encode_utf7(from || @mailbox.external_name), @mailbox.read_only) do
+        @gmail.conn.uid_copy(uid, Net::IMAP.encode_utf7(name))
+      end
     rescue Net::IMAP::NoResponseError
       raise NoLabelError, "Label '#{name}' doesn't exist!"
     end

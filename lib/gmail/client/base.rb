@@ -15,7 +15,7 @@ module Gmail
       attr_reader :options
       
       def initialize(username, options={})
-        defaults       = {}
+        defaults       = { :read_only => false }
         @username      = fill_username(username)
         @options       = defaults.merge(options)
         @mailbox_mutex = Mutex.new
@@ -69,6 +69,8 @@ module Gmail
       
       # Return labels object, which helps you with managing your GMail labels.
       # See <tt>Gmail::Labels</tt> for details.
+      # TODO: the read_only option is not checked for
+      # label operations
       def labels
         @labels ||= Labels.new(conn)
       end
@@ -150,17 +152,18 @@ module Gmail
       #     mailbox.count(:all)
       #     ...
       #   end
-      def mailbox(name, &block)
+      def mailbox(name, read_only = nil, &block)
         @mailbox_mutex.synchronize do
           name = name.to_s
-          mailbox = (mailboxes[name] ||= Mailbox.new(self, name))
-          switch_to_mailbox(name) if @current_mailbox != name
+          mailbox = (mailboxes[name] ||= Mailbox.new(self, name, read_only_setting(read_only)))
+          switch_to_mailbox(name, mailbox.read_only) if @current_mailbox != name
 
           if block_given?
             mailbox_stack << @current_mailbox
             result = block.arity == 1 ? block.call(mailbox) : block.call
             mailbox_stack.pop
-            switch_to_mailbox(mailbox_stack.last)
+            last_mailbox = mailbox_stack.last
+            switch_to_mailbox(last_mailbox, last_mailbox ? last_mailbox.read_only : nil)
             return result
           end
 
@@ -173,8 +176,8 @@ module Gmail
       
       # Alias for <tt>mailbox("INBOX")</tt>. See <tt>Gmail::Client#mailbox</tt>
       # for details.
-      def inbox
-        mailbox("INBOX")
+      def inbox(read_only = nil)
+        mailbox("INBOX", read_only)
       end
       
       def mailboxes
@@ -194,11 +197,19 @@ module Gmail
       end
       
       private
+
+      def read_only_setting(read_only = nil)
+        read_only.nil? ? options[:read_only] : read_only
+      end
       
-      def switch_to_mailbox(mailbox)
+      def switch_to_mailbox(mailbox, read_only)
         if mailbox
           mailbox = Net::IMAP.encode_utf7(mailbox)
-          conn.select(mailbox)
+          if read_only
+            conn.examine(mailbox)
+          else
+            conn.select(mailbox)
+          end
         end
         @current_mailbox = mailbox
       end

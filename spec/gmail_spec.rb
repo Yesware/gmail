@@ -35,4 +35,16 @@ describe "Any object" do
       gmail.should_not be_logged_in 
     }.should raise_error(Gmail::Client::AuthorizationError)
   end
+
+  describe 'options' do
+    context "read_only" do
+      it "should default to false (read-write)" do
+        Gmail.new("foo", "bar").options[:read_only].should be_false
+      end
+
+      it "can be set to true" do
+        Gmail.new("foo", "bar", { :read_only => true }).options[:read_only].should be_true
+      end
+    end
+  end
 end

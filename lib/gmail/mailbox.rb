@@ -18,11 +18,13 @@ module Gmail
   
     attr_reader :name
     attr_reader :external_name
+    attr_reader :read_only
 
-    def initialize(gmail, name="INBOX")
+    def initialize(gmail, name="INBOX", read_only = nil)
       @name  = name
       @external_name = Net::IMAP.decode_utf7(name)
       @gmail = gmail
+      @read_only = read_only.nil? ? gmail.options[:read_only] : read_only
     end
 
     # Returns list of emails which meets given criteria. 
@@ -59,7 +61,7 @@ module Gmail
         opts[:body]       and search.concat ['BODY', opts[:body]]
         opts[:query]      and search.concat opts[:query]
 
-        @gmail.mailbox(name) do
+        @gmail.mailbox(name, read_only) do
           @gmail.conn.uid_search(search).collect do |uid| 
             message = (messages[uid] ||= Message.new(self, uid))
             block.call(message) if block_given?
@@ -92,7 +94,7 @@ module Gmail
 
     # This permanently removes messages which are marked as deleted
     def expunge
-      @gmail.mailbox(name) { @gmail.conn.expunge }
+      @gmail.mailbox(name, read_only) { @gmail.conn.expunge }
     end
 
     # Cached messages. 

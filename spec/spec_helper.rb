@@ -20,9 +20,9 @@ def within_gmail(&block)
   gmail.logout if gmail
 end
 
-def mock_mailbox(box="INBOX", &block)
+def mock_mailbox(box = "INBOX", read_only = false, &block)
   within_gmail do |gmail|
-    mailbox = subject.new(gmail, box)
+    mailbox = Gmail::Mailbox.new(gmail, box, read_only)
     yield(mailbox) if block_given?
     mailbox
   end
