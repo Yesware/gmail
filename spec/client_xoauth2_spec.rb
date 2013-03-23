@@ -40,7 +40,7 @@ describe "Gmail client (XOAuth2)" do
 
     it "should properly login to valid GMail account" do
       client = mock_client
-      client.connect.should be_nil
+      client.connect.should_not be_nil
       client.login.should be_true
       client.should be_logged_in
       client.logout
@@ -121,22 +121,7 @@ describe "Gmail client (XOAuth2)" do
       }.should raise_error(Gmail::Client::DeliveryError)
     end
 
-    it "should properly switch to given mailbox" do
-      mock_client do |client|
-        mailbox = client.mailbox("TEST")
-        mailbox.should be_kind_of(Gmail::Mailbox)
-        mailbox.name.should == "TEST"
-      end
-    end
-
-    it "should properly switch to given mailbox using block style" do
-      mock_client do |client|
-        client.mailbox("TEST") do |mailbox|
-          mailbox.should be_kind_of(Gmail::Mailbox)
-          mailbox.name.should == "TEST"
-        end
-      end
-    end
+    it_behaves_like "a mailbox switcher"
 
     context "labels" do
       subject {
@@ -145,32 +130,7 @@ describe "Gmail client (XOAuth2)" do
         client.labels
       }
 
-      it "should get list of all available labels" do
-        labels = subject
-        labels.all.should include("TEST", "INBOX")
-      end
-
-      it "should be able to check if there is given label defined" do
-        labels = subject
-        labels.exists?("TEST").should be_true
-        labels.exists?("FOOBAR").should be_false
-      end
-
-      it "should be able to create given label" do
-        labels = subject
-        labels.create("MYLABEL")
-        labels.exists?("MYLABEL").should be_true
-        labels.create("MYLABEL").should be_false
-        labels.delete("MYLABEL")
-      end
-
-      it "should be able to remove existing label" do
-        labels = subject
-        labels.create("MYLABEL")
-        labels.delete("MYLABEL").should be_true
-        labels.exists?("MYLABEL").should be_false
-        labels.delete("MYLABEL").should be_false
-      end
+      it_behaves_like "a label manipulator"
     end
   end
 end

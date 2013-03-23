@@ -7,6 +7,9 @@ require 'mocha/api'
 require 'yaml'
 require 'gmail'
 
+require_relative 'support/labels_helpers'
+require_relative 'support/mailbox_helpers'
+
 RSpec.configure do |config| 
   config.mock_with :mocha
 end
