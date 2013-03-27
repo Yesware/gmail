@@ -19,4 +19,22 @@ shared_examples_for "a mailbox switcher" do
       client.labels.delete("TEST")
     end
   end
+
+  it "should allow nested mailbox access" do
+    mock_client do |client|
+      client.labels.create("TEST")
+      client.labels.create("TEST2")
+
+      # Add a mailbox to the stack
+      client.send(:mailbox_stack) << 'TEST'
+      client.mailboxes['TEST'] = Gmail::Mailbox.new(client, 'TEST', true)
+
+      client.mailbox("TEST2") do |mailbox|
+        mailbox.name.should == "TEST2"
+      end
+
+      client.labels.delete("TEST")
+      client.labels.delete("TEST2")
+    end
+  end
 end

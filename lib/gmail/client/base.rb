@@ -163,7 +163,7 @@ module Gmail
             result = block.arity == 1 ? block.call(mailbox) : block.call
             mailbox_stack.pop
             last_mailbox = mailbox_stack.last
-            switch_to_mailbox(last_mailbox, last_mailbox ? last_mailbox.read_only : nil)
+            switch_to_mailbox(last_mailbox, last_mailbox ? mailboxes[last_mailbox].read_only : nil)
             return result
           end
 
